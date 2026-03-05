@@ -25,12 +25,19 @@ app.use("/api/status", statusRoutes);
 app.use("/api/incidents", incidentRoutes);
 app.use("/api/components", componentRoutes);
 
-const webDist = resolve(__dirname, "../../web/dist");
+const webDist = resolve(process.cwd(), "apps/web/dist");
 app.use(express.static(webDist));
 app.get("*", (_req, res) => {
-  res.sendFile(resolve(webDist, "index.html"));
+  const index = resolve(webDist, "index.html");
+  res.sendFile(index, (err) => {
+    if (err) {
+      console.error(`Failed to serve index.html from ${index}:`, err);
+      res.status(404).send("Frontend not found. Build apps/web first.");
+    }
+  });
 });
 
 app.listen(config.port, () => {
   console.log(`API listening on :${config.port}`);
+  console.log(`Serving frontend from ${webDist}`);
 });

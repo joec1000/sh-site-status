@@ -1,0 +1,13 @@
+{
+  "name": "sh-site-status",
+  "private": true,
+  "scripts": {
+    "dev:api": "pnpm --filter @sh/api dev",
+    "dev:web": "pnpm --filter @sh/web dev",
+    "dev": "pnpm --filter @sh/api --filter @sh/web --parallel run dev",
+    "build:shared": "pnpm --filter @sh/shared build",
+    "build:api": "pnpm --filter @sh/api build",
+    "build:web": "pnpm --filter @sh/web build",
+    "build": "pnpm run build:shared && pnpm run --parallel build:api build:web"
+  }
+}

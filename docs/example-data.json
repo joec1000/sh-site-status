@@ -1,0 +1,82 @@
+{
+  "_comment": "Example JSON structures stored in GCS",
+
+  "components/components.json": {
+    "components": [
+      {
+        "id": "web",
+        "name": "Web",
+        "description": "Public marketing website",
+        "status": "operational",
+        "order": 0,
+        "updatedAt": "2026-03-04T12:00:00.000Z"
+      },
+      {
+        "id": "admin",
+        "name": "Admin",
+        "description": "Admin dashboard",
+        "status": "operational",
+        "order": 1,
+        "updatedAt": "2026-03-04T12:00:00.000Z"
+      },
+      {
+        "id": "app",
+        "name": "App",
+        "description": "Main application",
+        "status": "degraded",
+        "order": 2,
+        "updatedAt": "2026-03-04T14:30:00.000Z"
+      }
+    ],
+    "updatedAt": "2026-03-04T14:30:00.000Z"
+  },
+
+  "incidents/abc-123.json": {
+    "id": "abc-123",
+    "title": "Elevated error rates on App",
+    "severity": "major",
+    "status": "investigating",
+    "components": ["app"],
+    "updates": [
+      {
+        "id": "upd-001",
+        "status": "investigating",
+        "message": "We are investigating elevated 5xx error rates affecting the main application.",
+        "createdAt": "2026-03-04T14:30:00.000Z"
+      }
+    ],
+    "startedAt": "2026-03-04T14:30:00.000Z",
+    "resolvedAt": null,
+    "updatedAt": "2026-03-04T14:30:00.000Z"
+  },
+
+  "status/current_status.json": {
+    "overall": "degraded",
+    "components": [
+      { "id": "web", "name": "Web", "description": "Public marketing website", "status": "operational", "order": 0, "updatedAt": "2026-03-04T12:00:00.000Z" },
+      { "id": "admin", "name": "Admin", "description": "Admin dashboard", "status": "operational", "order": 1, "updatedAt": "2026-03-04T12:00:00.000Z" },
+      { "id": "app", "name": "App", "description": "Main application", "status": "degraded", "order": 2, "updatedAt": "2026-03-04T14:30:00.000Z" }
+    ],
+    "activeIncidents": [
+      {
+        "id": "abc-123",
+        "title": "Elevated error rates on App",
+        "severity": "major",
+        "status": "investigating",
+        "components": ["app"],
+        "updates": [
+          {
+            "id": "upd-001",
+            "status": "investigating",
+            "message": "We are investigating elevated 5xx error rates affecting the main application.",
+            "createdAt": "2026-03-04T14:30:00.000Z"
+          }
+        ],
+        "startedAt": "2026-03-04T14:30:00.000Z",
+        "resolvedAt": null,
+        "updatedAt": "2026-03-04T14:30:00.000Z"
+      }
+    ],
+    "updatedAt": "2026-03-04T14:35:00.000Z"
+  }
+}

@@ -25,6 +25,12 @@ app.use("/api/status", statusRoutes);
 app.use("/api/incidents", incidentRoutes);
 app.use("/api/components", componentRoutes);
 
+const webDist = resolve(__dirname, "../../web/dist");
+app.use(express.static(webDist));
+app.get("*", (_req, res) => {
+  res.sendFile(resolve(webDist, "index.html"));
+});
+
 app.listen(config.port, () => {
   console.log(`API listening on :${config.port}`);
 });

@@ -25,19 +25,27 @@ app.use("/api/status", statusRoutes);
 app.use("/api/incidents", incidentRoutes);
 app.use("/api/components", componentRoutes);
 
-const webDist = resolve(process.cwd(), "apps/web/dist");
+import fs from "fs";
+
+const webCandidates = [
+  resolve(process.cwd(), "apps/web/dist"),
+  resolve(__dirname, "../../web/dist"),
+  resolve(__dirname, "../../../apps/web/dist"),
+];
+const webDist = webCandidates.find((d) => fs.existsSync(resolve(d, "index.html"))) ?? webCandidates[0];
+
 app.use(express.static(webDist));
-app.get("*", (_req, res) => {
+app.use((_req, res, next) => {
   const index = resolve(webDist, "index.html");
-  res.sendFile(index, (err) => {
-    if (err) {
-      console.error(`Failed to serve index.html from ${index}:`, err);
-      res.status(404).send("Frontend not found. Build apps/web first.");
-    }
-  });
+  if (fs.existsSync(index)) {
+    res.sendFile(index);
+  } else {
+    next();
+  }
 });
 
 app.listen(config.port, () => {
   console.log(`API listening on :${config.port}`);
   console.log(`Serving frontend from ${webDist}`);
+  console.log(`index.html exists: ${fs.existsSync(resolve(webDist, "index.html"))}`);
 });

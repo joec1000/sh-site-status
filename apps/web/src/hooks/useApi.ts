@@ -20,16 +20,20 @@ function adminHeaders(adminKey: string): Record<string, string> {
   return { "x-admin-key": adminKey };
 }
 
+const AUTO_REFRESH_MS = 60_000;
+
 export function useStatus() {
   const [status, setStatus] = useState<CurrentStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
 
   const refresh = useCallback(async () => {
     try {
       setLoading(true);
       const data = await apiFetch<CurrentStatus>("/api/status");
       setStatus(data);
+      setLastRefreshed(new Date());
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load status");
@@ -40,9 +44,11 @@ export function useStatus() {
 
   useEffect(() => {
     refresh();
+    const id = setInterval(refresh, AUTO_REFRESH_MS);
+    return () => clearInterval(id);
   }, [refresh]);
 
-  return { status, loading, error, refresh };
+  return { status, loading, error, refresh, lastRefreshed };
 }
 
 export function useIncidents() {

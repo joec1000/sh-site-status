@@ -9,7 +9,7 @@ import { AdminPanel } from "./components/AdminPanel.js";
 import "./styles.css";
 
 export function App() {
-  const { status, loading, error, refresh: refreshStatus } = useStatus();
+  const { status, loading, error, refresh: refreshStatus, lastRefreshed } = useStatus();
   const { incidents, loading: incidentsLoading, refresh: refreshIncidents } = useIncidents();
   const [adminMode, setAdminMode] = useState(false);
   const [adminKey, setAdminKey] = useState("dev-secret-key");
@@ -51,7 +51,7 @@ export function App() {
 
   return (
     <div className="page">
-      <StatusHeader overall={status?.overall ?? "operational"} />
+      <StatusHeader overall={status?.overall ?? "operational"} lastRefreshed={lastRefreshed} onRefresh={refresh} />
 
       <div className="container">
         <ComponentCards

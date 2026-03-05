@@ -20,9 +20,11 @@ interface Props {
 }
 
 export function IncidentList({ incidents, loading, adminMode, adminKey, onUpdate, onEditIncident }: Props) {
-  const sorted = [...incidents].sort(
-    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-  );
+  const sorted = [...incidents].sort((a, b) => {
+    const latestA = a.updates.length ? a.updates[a.updates.length - 1].createdAt : a.updatedAt;
+    const latestB = b.updates.length ? b.updates[b.updates.length - 1].createdAt : b.updatedAt;
+    return new Date(latestB).getTime() - new Date(latestA).getTime();
+  });
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const didAutoExpand = useRef(false);

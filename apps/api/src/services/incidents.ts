@@ -19,9 +19,11 @@ export async function listIncidents(): Promise<Incident[]> {
     if (result) incidents.push(result.data);
   }
 
-  incidents.sort(
-    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-  );
+  incidents.sort((a, b) => {
+    const latestA = a.updates.length ? a.updates[a.updates.length - 1].createdAt : a.updatedAt;
+    const latestB = b.updates.length ? b.updates[b.updates.length - 1].createdAt : b.updatedAt;
+    return new Date(latestB).getTime() - new Date(latestA).getTime();
+  });
   return incidents;
 }
 

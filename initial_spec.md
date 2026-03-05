@@ -52,3 +52,12 @@ A) Proposing folder structure
 B) Implementing GCS storage service
 C) Implementing incident create
 D) Implementing GET /status endpoint
+
+---
+
+Update Prompts:
+
+Please have the page auto-refresh via the status API every 60s, also show in the lower right corner of the top section, in dimmed text: Last Refreshed: 9:15:25 AM [refresh icon] (where a user can also click to manually refresh).
+
+
+Add buttons to the admin row (to the left of the Admin Key) for Import and Export of the data/json files. I think we can have it as a single JSON file that contains the individual ones needed to backup and restore a state with the json files. Name the file export_yyyyddmm_hhmm.json 

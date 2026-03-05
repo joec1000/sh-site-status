@@ -87,6 +87,7 @@ export function App() {
           onToggle={() => setAdminMode(!adminMode)}
           onKeyChange={setAdminKey}
           onCreateIncident={openCreate}
+          onDataChange={refresh}
         />
       </div>
     </div>

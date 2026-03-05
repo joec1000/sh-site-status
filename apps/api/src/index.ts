@@ -11,6 +11,7 @@ import { config, validateConfig } from "./config.js";
 import statusRoutes from "./routes/status.js";
 import incidentRoutes from "./routes/incidents.js";
 import componentRoutes from "./routes/components.js";
+import dataRoutes from "./routes/data.js";
 
 validateConfig();
 
@@ -24,6 +25,7 @@ app.get("/health", (_req, res) => res.json({ ok: true }));
 app.use("/api/status", statusRoutes);
 app.use("/api/incidents", incidentRoutes);
 app.use("/api/components", componentRoutes);
+app.use("/api/data", dataRoutes);
 
 import fs from "fs";
 

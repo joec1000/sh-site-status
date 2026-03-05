@@ -337,6 +337,13 @@ body {
   margin-left: auto;
 }
 
+.admin-bar-divider {
+  width: 1px;
+  height: 1.25rem;
+  background: var(--color-gray-600);
+  flex-shrink: 0;
+}
+
 .admin-key-label {
   font-size: 0.8rem;
   color: var(--color-gray-300);

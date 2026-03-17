@@ -86,3 +86,12 @@ gsutil versioning set on gs://your-status-page-bucket
 All writes use GCS `ifGenerationMatch` preconditions. If two concurrent writes
 target the same object, only the first succeeds — the second gets a 412 and
 must retry.
+
+
+<!-- 
+- Need to automate when create or delete incident to post in main channel.
+- Need to add more card 
+- Remove Resolved one
+- Use doc and change severity based on docs
+- Need to hide Admin footer for normal user, its should be visible to user who has admin key
+ -->

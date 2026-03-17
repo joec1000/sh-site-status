@@ -8,13 +8,18 @@ import { AdminBar } from "./components/AdminBar.js";
 import { AdminPanel } from "./components/AdminPanel.js";
 import "./styles.css";
 
+const API_BASE = import.meta.env.VITE_API_URL || "";
+
 export function App() {
   const { status, loading, error, refresh: refreshStatus, lastRefreshed } = useStatus();
   const { incidents, loading: incidentsLoading, refresh: refreshIncidents } = useIncidents();
   const [adminMode, setAdminMode] = useState(false);
-  const [adminKey, setAdminKey] = useState("dev-secret-key");
+  const [adminKey, setAdminKey] = useState("");
   const [panelIncident, setPanelIncident] = useState<Incident | null>(null);
   const [showPanel, setShowPanel] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [loginKey, setLoginKey] = useState("");
+  const [loginError, setLoginError] = useState("");
 
   const refresh = () => {
     refreshStatus();
@@ -24,6 +29,32 @@ export function App() {
   const openCreate = () => { setPanelIncident(null); setShowPanel(true); };
   const openEdit = (incident: Incident) => { setPanelIncident(incident); setShowPanel(true); };
   const closePanel = () => setShowPanel(false);
+
+  const handleAdminLogin = async () => {
+    setLoginError("");
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-key": loginKey },
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setAdminKey(loginKey);
+        setAdminMode(true);
+        setShowLoginPrompt(false);
+        setLoginKey("");
+      } else {
+        setLoginError("Invalid admin key");
+      }
+    } catch {
+      setLoginError("Could not verify key");
+    }
+  };
+
+  const handleAdminLogout = () => {
+    setAdminMode(false);
+    setAdminKey("");
+  };
 
   if (loading && !status) {
     return (
@@ -70,7 +101,7 @@ export function App() {
           />
         )}
 
-        <div style={{ paddingBottom: "5rem" }}>
+        <div style={{ paddingBottom: adminMode ? "5rem" : "2rem" }}>
           <IncidentList
             incidents={incidents}
             loading={incidentsLoading}
@@ -81,14 +112,52 @@ export function App() {
           />
         </div>
 
-        <AdminBar
-          adminMode={adminMode}
-          adminKey={adminKey}
-          onToggle={() => setAdminMode(!adminMode)}
-          onKeyChange={setAdminKey}
-          onCreateIncident={openCreate}
-          onDataChange={refresh}
-        />
+        {adminMode ? (
+          <AdminBar
+            adminMode={adminMode}
+            adminKey={adminKey}
+            onToggle={handleAdminLogout}
+            onKeyChange={setAdminKey}
+            onCreateIncident={openCreate}
+            onDataChange={refresh}
+          />
+        ) : (
+          <>
+            <button
+              className="admin-lock-btn"
+              onClick={() => setShowLoginPrompt(true)}
+              title="Admin login"
+            >
+              <span className="material-icons">lock</span>
+            </button>
+
+            {showLoginPrompt && (
+              <div className="admin-login-overlay" onClick={() => setShowLoginPrompt(false)}>
+                <div className="admin-login-dialog" onClick={(e) => e.stopPropagation()}>
+                  <h3>Admin Login</h3>
+                  <p>Enter the admin key to manage this status page.</p>
+                  <input
+                    type="password"
+                    placeholder="Admin key..."
+                    value={loginKey}
+                    onChange={(e) => setLoginKey(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") handleAdminLogin(); }}
+                    autoFocus
+                  />
+                  {loginError && <p className="admin-login-error">{loginError}</p>}
+                  <div className="admin-login-actions">
+                    <button className="btn btn-primary" onClick={handleAdminLogin}>
+                      Login
+                    </button>
+                    <button className="btn btn-secondary" onClick={() => setShowLoginPrompt(false)}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

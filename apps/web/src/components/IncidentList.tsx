@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import type { Incident, IncidentStatus } from "@sh/shared";
-import { SEVERITY_LABELS, INCIDENT_STATUS_LABELS, DEFAULT_COMPONENTS } from "@sh/shared";
+import type { Incident, IncidentStatus, IncidentUpdate as IncidentUpdateType } from "@sh/shared";
+import { SEVERITY_LABELS, INCIDENT_STATUS_LABELS, DEFAULT_COMPONENTS, COMMUNICATION_MATRIX } from "@sh/shared";
 import { adminApi } from "../hooks/useApi.js";
 
 const INCIDENT_STATUSES: IncidentStatus[] = [
@@ -9,6 +9,14 @@ const INCIDENT_STATUSES: IncidentStatus[] = [
   "monitoring",
   "resolved",
 ];
+
+const SEVERITY_COLOR: Record<string, string> = {
+  sev1: "critical",
+  sev2: "high",
+  sev3: "medium",
+  sev4: "low",
+  sev5: "lowest",
+};
 
 interface Props {
   incidents: Incident[];
@@ -20,10 +28,17 @@ interface Props {
 }
 
 export function IncidentList({ incidents, loading, adminMode, adminKey, onUpdate, onEditIncident }: Props) {
-  const sorted = [...incidents].sort((a, b) => {
+  const active = incidents.filter((i) => i.status !== "resolved");
+  const resolved = incidents.filter((i) => i.status === "resolved");
+
+  const sorted = [...active].sort((a, b) => {
     const latestA = a.updates.length ? a.updates[a.updates.length - 1].createdAt : a.updatedAt;
     const latestB = b.updates.length ? b.updates[b.updates.length - 1].createdAt : b.updatedAt;
     return new Date(latestB).getTime() - new Date(latestA).getTime();
+  });
+
+  const resolvedSorted = [...resolved].sort((a, b) => {
+    return new Date(b.resolvedAt ?? b.updatedAt).getTime() - new Date(a.resolvedAt ?? a.updatedAt).getTime();
   });
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -34,14 +49,13 @@ export function IncidentList({ incidents, loading, adminMode, adminKey, onUpdate
     if (!didAutoExpand.current) {
       didAutoExpand.current = true;
       setExpandedId(sorted[0].id);
-    } else if (expandedId && !sorted.find((i) => i.id === expandedId)) {
-      // expanded incident was deleted — fall back to first
-      setExpandedId(sorted[0].id);
+    } else if (expandedId && !incidents.find((i) => i.id === expandedId)) {
+      setExpandedId(sorted[0]?.id ?? resolvedSorted[0]?.id ?? null);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [incidents]);
 
-  if (loading && sorted.length === 0) {
+  if (loading && incidents.length === 0) {
     return (
       <section className="incidents-section">
         <h2>Incidents</h2>
@@ -51,27 +65,34 @@ export function IncidentList({ incidents, loading, adminMode, adminKey, onUpdate
   }
 
   return (
-    <section className="incidents-section">
-      <h2>Incidents</h2>
-      {sorted.length === 0 ? (
-        <div className="no-incidents">No incidents reported</div>
-      ) : (
-        sorted.map((incident) => (
-          <IncidentCard
-            key={incident.id}
-            incident={incident}
-            expanded={expandedId === incident.id}
-            onToggle={() =>
-              setExpandedId(expandedId === incident.id ? null : incident.id)
-            }
-            adminMode={adminMode}
-            adminKey={adminKey}
-            onUpdate={onUpdate}
-            onEdit={() => onEditIncident(incident)}
-          />
-        ))
-      )}
-    </section>
+    <>
+      {/* Active Incidents */}
+      <section className="incidents-section">
+        <h2>Active Incidents</h2>
+        {sorted.length === 0 ? (
+          <div className="no-incidents">
+            <span className="no-incidents-icon">{"\u2705"}</span>
+            No active incidents
+          </div>
+        ) : (
+          sorted.map((incident) => (
+            <IncidentCard
+              key={incident.id}
+              incident={incident}
+              expanded={expandedId === incident.id}
+              onToggle={() =>
+                setExpandedId(expandedId === incident.id ? null : incident.id)
+              }
+              adminMode={adminMode}
+              adminKey={adminKey}
+              onUpdate={onUpdate}
+              onEdit={() => onEditIncident(incident)}
+            />
+          ))
+        )}
+      </section>
+
+    </>
   );
 }
 
@@ -93,6 +114,9 @@ function IncidentCard({
   onEdit: () => void;
 }) {
   const latestUpdate = incident.updates[incident.updates.length - 1];
+  const isResolved = incident.status === "resolved";
+  const sevColor = SEVERITY_COLOR[incident.severity] ?? "low";
+  const commInfo = COMMUNICATION_MATRIX[incident.severity];
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -106,18 +130,19 @@ function IncidentCard({
   };
 
   return (
-    <div className="incident-card">
+    <div className={`incident-card ${isResolved ? "resolved" : ""}`}>
+      {/* Header */}
       <div
         className="incident-header"
         style={{ cursor: "pointer" }}
         onClick={onToggle}
       >
-        <div style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem" }}>
-          <span style={{ fontSize: "0.75rem", marginTop: "0.2rem", color: "#666", flexShrink: 0 }}>
-            {expanded ? "▼" : "▶"}
+        <div style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem", flex: 1, minWidth: 0 }}>
+          <span className="incident-expand-icon">
+            {expanded ? "\u25BC" : "\u25B6"}
           </span>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
               <span className="incident-title">{incident.title}</span>
               {adminMode && (
                 <button
@@ -130,35 +155,52 @@ function IncidentCard({
                 </button>
               )}
             </div>
+            {/* Incident metadata line */}
+            <div className="incident-meta-line">
+              {incident.owner && (
+                <span className="incident-meta-item">
+                  <span className="material-icons" style={{ fontSize: "0.8rem" }}>person</span>
+                  {incident.owner}
+                </span>
+              )}
+              {incident.startedAt && (
+                <span className="incident-meta-item">
+                  <span className="material-icons" style={{ fontSize: "0.8rem" }}>schedule</span>
+                  {formatTime(incident.startedAt)}
+                </span>
+              )}
+              {incident.nextUpdateTime && !isResolved && (
+                <span className="incident-meta-item next-update">
+                  Next update: {incident.nextUpdateTime}
+                </span>
+              )}
+            </div>
+            {/* Affected components */}
             {incident.components.length > 0 && (
-              <div style={{ display: "flex", gap: "0.3rem", flexWrap: "wrap", marginTop: "0.3rem" }}>
+              <div className="incident-components">
                 {incident.components.map((id) => {
                   const name = DEFAULT_COMPONENTS.find((c) => c.id === id)?.name ?? id;
                   return (
-                    <span key={id} style={{ fontSize: "0.7rem", background: "#f0f0f0", color: "#555", borderRadius: "4px", padding: "0.1rem 0.4rem" }}>
+                    <span key={id} className="incident-component-chip">
                       {name}
                     </span>
                   );
                 })}
               </div>
             )}
+            {/* Collapsed preview */}
             {latestUpdate && !expanded && (
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: "1rem", marginTop: "0.25rem" }}>
-                <p className="timeline-message" style={{ margin: 0 }}>
-                  {latestUpdate.message}
-                </p>
-                <span style={{ fontSize: "0.75rem", color: "#888", whiteSpace: "nowrap", flexShrink: 0 }}>
-                  {formatTime(latestUpdate.createdAt)}
+              <div className="incident-preview">
+                <span className={`incident-status-badge ${incident.status}`}>
+                  {INCIDENT_STATUS_LABELS[incident.status]}
                 </span>
+                <p className="timeline-message">{latestUpdate.message}</p>
               </div>
             )}
           </div>
         </div>
         <div className="incident-meta">
-          <span
-            className={`severity-badge ${incident.severity}`}
-            style={incident.status === "resolved" ? { opacity: 0.35, filter: "grayscale(1)" } : undefined}
-          >
+          <span className={`severity-badge ${sevColor}`}>
             {SEVERITY_LABELS[incident.severity]}
           </span>
           <span className={`incident-status-badge ${incident.status}`}>
@@ -177,9 +219,73 @@ function IncidentCard({
         </div>
       </div>
 
+      {/* Expanded content */}
       {expanded && (
-        <>
+        <div className="incident-body">
+          {/* Incident details panel */}
+          <div className="incident-details">
+            {incident.impact && (
+              <div className="detail-row">
+                <span className="detail-label">Impact</span>
+                <span className="detail-value">{incident.impact}</span>
+              </div>
+            )}
+            {incident.systems && (
+              <div className="detail-row">
+                <span className="detail-label">Systems</span>
+                <span className="detail-value">{incident.systems}</span>
+              </div>
+            )}
+            {incident.owner && (
+              <div className="detail-row">
+                <span className="detail-label">Owner</span>
+                <span className="detail-value">
+                  {incident.owner}
+                  {incident.commsLead && ` (Comms Lead: ${incident.commsLead})`}
+                </span>
+              </div>
+            )}
+            {incident.actions && (
+              <div className="detail-row">
+                <span className="detail-label">Actions</span>
+                <span className="detail-value">{incident.actions}</span>
+              </div>
+            )}
+            {commInfo && (
+              <div className="detail-row">
+                <span className="detail-label">Comms</span>
+                <span className="detail-value comm-info">
+                  {commInfo.channels} &middot; {commInfo.frequency}
+                </span>
+              </div>
+            )}
+            {isResolved && incident.customerImpactWindow && (
+              <div className="detail-row">
+                <span className="detail-label">Impact Window</span>
+                <span className="detail-value">{incident.customerImpactWindow}</span>
+              </div>
+            )}
+            {isResolved && incident.rootCause && (
+              <div className="detail-row">
+                <span className="detail-label">Root Cause</span>
+                <span className="detail-value">{incident.rootCause}</span>
+              </div>
+            )}
+            {isResolved && incident.followUps && incident.followUps.length > 0 && (
+              <div className="detail-row">
+                <span className="detail-label">Follow-ups</span>
+                <ul className="detail-followups">
+                  {incident.followUps.map((f, i) => (
+                    <li key={i}>{f}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          {/* Timeline */}
           <div className="incident-timeline">
+            <h4 className="timeline-title">Timeline</h4>
             {incident.updates.map((u) => (
               <TimelineEntry
                 key={u.id}
@@ -199,7 +305,7 @@ function IncidentCard({
               onUpdate={onUpdate}
             />
           )}
-        </>
+        </div>
       )}
     </div>
   );
@@ -218,7 +324,7 @@ function TimelineEntry({
   adminKey,
   onUpdate,
 }: {
-  update: { id: string; status: IncidentStatus; message: string; createdAt: string };
+  update: IncidentUpdateType;
   incidentId: string;
   adminMode: boolean;
   adminKey: string;
@@ -252,8 +358,10 @@ function TimelineEntry({
     }
   };
 
+  const isResolved = update.status === "resolved";
+
   return (
-    <div className="timeline-entry">
+    <div className={`timeline-entry ${isResolved ? "resolved" : ""}`}>
       <div className="timeline-entry-header">
         {editing ? (
           <select
@@ -266,7 +374,7 @@ function TimelineEntry({
             ))}
           </select>
         ) : (
-          <span className="timeline-status">
+          <span className={`timeline-status ${update.status}`}>
             {INCIDENT_STATUS_LABELS[update.status]}
           </span>
         )}
@@ -302,7 +410,7 @@ function TimelineEntry({
               autoFocus
             />
             <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={saving}>
-              {saving ? "…" : "Save"}
+              {saving ? "\u2026" : "Save"}
             </button>
             <button className="btn btn-sm" onClick={() => setEditing(false)}>
               Cancel
@@ -310,7 +418,39 @@ function TimelineEntry({
           </div>
         </>
       ) : (
-        <p className="timeline-message" style={{ margin: 0 }}>{update.message}</p>
+        <>
+          <p className="timeline-message">{update.message}</p>
+          {/* Show structured update fields if present */}
+          {(update.currentImpact || update.progress || update.eta || update.risksUnknowns) && (
+            <div className="timeline-structured">
+              {update.currentImpact && (
+                <div className="structured-field">
+                  <span className="structured-label">Current Impact:</span> {update.currentImpact}
+                </div>
+              )}
+              {update.progress && (
+                <div className="structured-field">
+                  <span className="structured-label">Progress:</span> {update.progress}
+                </div>
+              )}
+              {update.eta && (
+                <div className="structured-field">
+                  <span className="structured-label">ETA:</span> {update.eta}
+                </div>
+              )}
+              {update.risksUnknowns && (
+                <div className="structured-field">
+                  <span className="structured-label">Risks/Unknowns:</span> {update.risksUnknowns}
+                </div>
+              )}
+            </div>
+          )}
+          {update.nextUpdateTime && (
+            <div className="timeline-next-update">
+              Next update: {update.nextUpdateTime}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -327,15 +467,38 @@ function UpdateForm({
 }) {
   const [status, setStatus] = useState<IncidentStatus>("identified");
   const [message, setMessage] = useState("");
+  const [currentImpact, setCurrentImpact] = useState("");
+  const [progress, setProgress] = useState("");
+  const [eta, setEta] = useState("");
+  const [risksUnknowns, setRisksUnknowns] = useState("");
+  const [nextUpdateTime, setNextUpdateTime] = useState("");
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const isOngoing = status !== "resolved" && status !== "investigating";
+  const isResolving = status === "resolved";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim()) return;
     setSubmitting(true);
     try {
-      await adminApi.postUpdate(adminKey, incidentId, { status, message });
+      await adminApi.postUpdate(adminKey, incidentId, {
+        status,
+        message,
+        ...(currentImpact ? { currentImpact } : {}),
+        ...(progress ? { progress } : {}),
+        ...(eta ? { eta } : {}),
+        ...(risksUnknowns ? { risksUnknowns } : {}),
+        ...(nextUpdateTime ? { nextUpdateTime } : {}),
+      });
       setMessage("");
+      setCurrentImpact("");
+      setProgress("");
+      setEta("");
+      setRisksUnknowns("");
+      setNextUpdateTime("");
+      setShowAdvanced(false);
       onUpdate();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Update failed");
@@ -346,6 +509,7 @@ function UpdateForm({
 
   return (
     <form className="update-form" onSubmit={handleSubmit}>
+      <h4 className="update-form-title">Post Update</h4>
       <div className="form-row">
         <div className="form-group">
           <label>Status</label>
@@ -367,6 +531,77 @@ function UpdateForm({
           />
         </div>
       </div>
+
+      {/* Toggle for structured fields */}
+      <button
+        type="button"
+        className="btn btn-sm btn-secondary"
+        onClick={() => setShowAdvanced(!showAdvanced)}
+        style={{ marginBottom: "0.5rem" }}
+      >
+        {showAdvanced ? "Hide" : "Show"} structured fields
+      </button>
+
+      {showAdvanced && (
+        <div className="update-advanced-fields">
+          {(isOngoing || isResolving) && (
+            <div className="form-group">
+              <label>Current Impact</label>
+              <input
+                type="text"
+                value={currentImpact}
+                onChange={(e) => setCurrentImpact(e.target.value)}
+                placeholder="What is the current customer impact?"
+              />
+            </div>
+          )}
+          {isOngoing && (
+            <>
+              <div className="form-group">
+                <label>Progress Since Last Update</label>
+                <input
+                  type="text"
+                  value={progress}
+                  onChange={(e) => setProgress(e.target.value)}
+                  placeholder="What has changed since last update?"
+                />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>ETA (if known)</label>
+                  <input
+                    type="text"
+                    value={eta}
+                    onChange={(e) => setEta(e.target.value)}
+                    placeholder="Expected resolution time"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Risks / Unknowns</label>
+                  <input
+                    type="text"
+                    value={risksUnknowns}
+                    onChange={(e) => setRisksUnknowns(e.target.value)}
+                    placeholder="Any risks or unknowns?"
+                  />
+                </div>
+              </div>
+            </>
+          )}
+          {!isResolving && (
+            <div className="form-group">
+              <label>Next Update Time</label>
+              <input
+                type="text"
+                value={nextUpdateTime}
+                onChange={(e) => setNextUpdateTime(e.target.value)}
+                placeholder="e.g. 30 minutes, 2:00 PM ET"
+              />
+            </div>
+          )}
+        </div>
+      )}
+
       <button className="btn btn-primary btn-sm" type="submit" disabled={submitting || !message.trim()}>
         {submitting ? "Posting..." : "Post Update"}
       </button>

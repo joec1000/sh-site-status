@@ -12,6 +12,7 @@ import statusRoutes from "./routes/status.js";
 import incidentRoutes from "./routes/incidents.js";
 import componentRoutes from "./routes/components.js";
 import dataRoutes from "./routes/data.js";
+import { startSlackNotifier } from "./services/slackNotifier.js";
 
 validateConfig();
 
@@ -21,6 +22,10 @@ app.use(cors({ origin: config.corsOrigin }));
 app.use(express.json());
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
+app.post("/api/auth/verify", (req, res) => {
+  const key = req.headers["x-admin-key"] as string | undefined;
+  res.json({ ok: key === config.adminKey });
+});
 
 app.use("/api/status", statusRoutes);
 app.use("/api/incidents", incidentRoutes);
@@ -50,4 +55,5 @@ app.listen(config.port, () => {
   console.log(`API listening on :${config.port}`);
   console.log(`Serving frontend from ${webDist}`);
   console.log(`index.html exists: ${fs.existsSync(resolve(webDist, "index.html"))}`);
+  startSlackNotifier();
 });

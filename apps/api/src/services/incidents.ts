@@ -50,6 +50,12 @@ export async function createIncident(req: CreateIncidentRequest): Promise<Incide
     status: "investigating",
     components: req.components,
     updates: [update],
+    owner: req.owner || "",
+    commsLead: req.commsLead,
+    impact: req.impact || "",
+    systems: req.systems || "",
+    actions: req.actions,
+    nextUpdateTime: req.nextUpdateTime,
     startedAt: now,
     resolvedAt: null,
     updatedAt: now,
@@ -74,12 +80,20 @@ export async function postIncidentUpdate(
     id: uuid(),
     status: req.status,
     message: req.message,
+    currentImpact: req.currentImpact,
+    progress: req.progress,
+    eta: req.eta,
+    risksUnknowns: req.risksUnknowns,
+    nextUpdateTime: req.nextUpdateTime,
     createdAt: now,
   };
 
   incident.updates.push(update);
   incident.status = req.status;
   incident.updatedAt = now;
+  if (req.nextUpdateTime) {
+    incident.nextUpdateTime = req.nextUpdateTime;
+  }
   if (req.status === "resolved") {
     incident.resolvedAt = now;
   }
@@ -91,7 +105,20 @@ export async function postIncidentUpdate(
 
 export async function updateIncident(
   id: string,
-  fields: { title?: string; severity?: string; components?: string[] },
+  fields: {
+    title?: string;
+    severity?: string;
+    components?: string[];
+    owner?: string;
+    commsLead?: string;
+    impact?: string;
+    systems?: string;
+    actions?: string;
+    nextUpdateTime?: string;
+    customerImpactWindow?: string;
+    rootCause?: string;
+    followUps?: string[];
+  },
 ): Promise<Incident> {
   const result = await readJson<Incident>(GCS_PATHS.incidentFile(id));
   if (!result) throw new NotFoundError("Incident not found");
@@ -100,6 +127,15 @@ export async function updateIncident(
   if (fields.title !== undefined) incident.title = fields.title;
   if (fields.severity !== undefined) incident.severity = fields.severity as Incident["severity"];
   if (fields.components !== undefined) incident.components = fields.components;
+  if (fields.owner !== undefined) incident.owner = fields.owner;
+  if (fields.commsLead !== undefined) incident.commsLead = fields.commsLead;
+  if (fields.impact !== undefined) incident.impact = fields.impact;
+  if (fields.systems !== undefined) incident.systems = fields.systems;
+  if (fields.actions !== undefined) incident.actions = fields.actions;
+  if (fields.nextUpdateTime !== undefined) incident.nextUpdateTime = fields.nextUpdateTime;
+  if (fields.customerImpactWindow !== undefined) incident.customerImpactWindow = fields.customerImpactWindow;
+  if (fields.rootCause !== undefined) incident.rootCause = fields.rootCause;
+  if (fields.followUps !== undefined) incident.followUps = fields.followUps;
   incident.updatedAt = new Date().toISOString();
 
   await writeJson(GCS_PATHS.incidentFile(id), incident, generation);

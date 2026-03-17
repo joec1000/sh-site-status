@@ -38,8 +38,12 @@ async function initializeComponents(): Promise<ComponentsFile> {
   const now = new Date().toISOString();
   const file: ComponentsFile = {
     components: DEFAULT_COMPONENTS.map((c) => ({
-      ...c,
+      id: c.id,
+      name: c.name,
+      description: c.description,
+      group: c.group,
       status: "operational" as const,
+      order: c.order,
       updatedAt: now,
     })),
     updatedAt: now,

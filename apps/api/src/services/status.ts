@@ -46,28 +46,24 @@ export async function regenerateStatus(): Promise<CurrentStatus> {
 }
 
 function computeOverallStatus(
-  components: Component[],
+  _components: Component[],
   activeIncidents: Incident[],
 ): ComponentStatus {
-  const hasCritical = activeIncidents.some((i) => i.severity === "critical");
-  if (hasCritical) return "major_outage";
+  // Overall status is driven entirely by active incidents.
+  // When all incidents are resolved, overall = operational.
 
-  const hasMajor = activeIncidents.some((i) => i.severity === "major");
-  if (hasMajor) return "partial_outage";
+  // SEV-1 (critical) → major_outage
+  const hasSev1 = activeIncidents.some((i) => i.severity === "sev1");
+  if (hasSev1) return "major_outage";
 
-  const hasMinor = activeIncidents.some((i) => i.severity === "minor");
-  if (hasMinor) return "degraded";
+  // SEV-2 (major degradation) → partial_outage
+  const hasSev2 = activeIncidents.some((i) => i.severity === "sev2");
+  if (hasSev2) return "partial_outage";
 
-  const worstComponent = components.reduce<ComponentStatus>((worst, c) => {
-    const rank: Record<ComponentStatus, number> = {
-      operational: 0,
-      maintenance: 1,
-      degraded: 2,
-      partial_outage: 3,
-      major_outage: 4,
-    };
-    return rank[c.status] > rank[worst] ? c.status : worst;
-  }, "operational");
+  // SEV-3 (minor) → degraded
+  const hasSev3 = activeIncidents.some((i) => i.severity === "sev3");
+  if (hasSev3) return "degraded";
 
-  return worstComponent;
+  // No active incidents (or only sev4) → operational
+  return "operational";
 }

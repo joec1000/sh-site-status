@@ -11,6 +11,7 @@ import {
   NotFoundError,
 } from "../services/incidents.js";
 import { requireAdmin } from "../middleware/auth.js";
+import { notifyIncidentCreated, notifyIncidentResolved, notifyIncidentDeleted } from "../services/slackNotifier.js";
 
 const router: IRouter = Router();
 
@@ -40,7 +41,7 @@ router.get("/:id", async (req, res) => {
 
 router.post("/", requireAdmin, async (req, res) => {
   try {
-    const { title, severity, message, components } = req.body;
+    const { title, severity, message, components, owner, commsLead, impact, systems, actions, nextUpdateTime } = req.body;
     if (!title || !severity || !message) {
       res.status(400).json({ ok: false, error: "title, severity, message required" });
       return;
@@ -50,7 +51,14 @@ router.post("/", requireAdmin, async (req, res) => {
       severity,
       message,
       components: components || [],
+      owner: owner || "",
+      commsLead,
+      impact: impact || "",
+      systems: systems || "",
+      actions,
+      nextUpdateTime,
     });
+    notifyIncidentCreated(incident);
     res.status(201).json({ ok: true, data: incident });
   } catch (err) {
     console.error("POST /incidents error:", err);
@@ -60,12 +68,21 @@ router.post("/", requireAdmin, async (req, res) => {
 
 router.post("/:id/updates", requireAdmin, async (req, res) => {
   try {
-    const { status, message } = req.body;
+    const { status, message, currentImpact, progress, eta, risksUnknowns, nextUpdateTime } = req.body;
     if (!status || !message) {
       res.status(400).json({ ok: false, error: "status, message required" });
       return;
     }
-    const incident = await postIncidentUpdate(req.params.id as string, { status: status as IncidentStatus, message: message as string });
+    const incident = await postIncidentUpdate(req.params.id as string, {
+      status: status as IncidentStatus,
+      message: message as string,
+      currentImpact,
+      progress,
+      eta,
+      risksUnknowns,
+      nextUpdateTime,
+    });
+    if (status === "resolved") notifyIncidentResolved(incident);
     res.json({ ok: true, data: incident });
   } catch (err) {
     if (err instanceof NotFoundError) {
@@ -79,8 +96,10 @@ router.post("/:id/updates", requireAdmin, async (req, res) => {
 
 router.patch("/:id", requireAdmin, async (req, res) => {
   try {
-    const { title, severity, components } = req.body;
-    const incident = await updateIncident(req.params.id as string, { title, severity, components });
+    const { title, severity, components, owner, commsLead, impact, systems, actions, nextUpdateTime, customerImpactWindow, rootCause, followUps } = req.body;
+    const incident = await updateIncident(req.params.id as string, {
+      title, severity, components, owner, commsLead, impact, systems, actions, nextUpdateTime, customerImpactWindow, rootCause, followUps,
+    });
     res.json({ ok: true, data: incident });
   } catch (err) {
     if (err instanceof NotFoundError) {
@@ -94,7 +113,9 @@ router.patch("/:id", requireAdmin, async (req, res) => {
 
 router.delete("/:id", requireAdmin, async (req, res) => {
   try {
+    const existing = await getIncident(req.params.id as string);
     await deleteIncident(req.params.id as string);
+    if (existing) notifyIncidentDeleted(existing.title);
     res.json({ ok: true });
   } catch (err) {
     if (err instanceof NotFoundError) {

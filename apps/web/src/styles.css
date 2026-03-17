@@ -7,6 +7,14 @@
 }
 
 :root {
+  /* SupplyHouse brand */
+  --sh-orange: #F15C02;
+  --sh-orange-dark: #D63D08;
+  --sh-blue: #07729C;
+  --sh-header-bg: #331811;
+  --sh-blue-dark: #0A3B5E;
+  --sh-gray-800: #343434;
+  /* Status colors (unchanged) */
   --color-green: #10b981;
   --color-green-bg: #ecfdf5;
   --color-yellow: #f59e0b;
@@ -17,26 +25,26 @@
   --color-red-bg: #fef2f2;
   --color-blue: #3b82f6;
   --color-blue-bg: #eff6ff;
-  --color-gray-50: #f9fafb;
-  --color-gray-100: #f3f4f6;
-  --color-gray-200: #e5e7eb;
-  --color-gray-300: #d1d5db;
-  --color-gray-400: #9ca3af;
-  --color-gray-500: #6b7280;
-  --color-gray-600: #4b5563;
-  --color-gray-700: #374151;
-  --color-gray-800: #1f2937;
+  --color-gray-50: #F8F8F8;
+  --color-gray-100: #EEEEEE;
+  --color-gray-200: #E3E3E3;
+  --color-gray-300: #DCDCDC;
+  --color-gray-400: #ACACAC;
+  --color-gray-500: #969696;
+  --color-gray-600: #757575;
+  --color-gray-700: #4b5563;
+  --color-gray-800: #343434;
   --color-gray-900: #111827;
-  --font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-  --radius: 8px;
+  --radius: 6px;
 }
 
 body {
   font-family: var(--font-family);
-  background: var(--color-gray-50);
+  background: #fff;
   color: var(--color-gray-800);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -51,51 +59,41 @@ body {
   padding: 0 2rem 2rem;
 }
 
-/* ============ Status Header ============ */
-.status-header {
-  padding: 2rem 0;
-  text-align: center;
-  color: #fff;
-  margin-bottom: 2rem;
+/* ============ SH Header ============ */
+.sh-header {
+  margin-bottom: 1.5rem;
 }
-.status-header.operational { background: var(--color-green); }
-.status-header.degraded { background: var(--color-yellow); }
-.status-header.partial_outage { background: var(--color-orange); }
-.status-header.major_outage { background: var(--color-red); }
-.status-header.maintenance { background: var(--color-blue); }
 
-.status-indicator-row {
+.sh-header-top {
+  background: var(--sh-header-bg);
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  margin-bottom: 0.25rem;
+  padding: 0.65rem 2rem;
+  gap: 1rem;
 }
 
-.status-header-icon {
-  font-size: 1.5rem;
-  line-height: 1;
+.sh-logo {
+  height: 22px;
+  flex-shrink: 0;
 }
 
-.status-header h1 {
-  font-size: 1.5rem;
-  font-weight: 600;
+.sh-header-title {
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  border-left: 1px solid rgba(255, 255, 255, 0.3);
+  padding-left: 1rem;
 }
 
-.status-header p {
-  font-size: 0.95rem;
-  opacity: 0.9;
-}
-
-.status-refresh {
-  position: absolute;
-  bottom: 0.75rem;
-  right: 1.5rem;
+.sh-header-refresh {
+  margin-left: auto;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
+  gap: 0.35rem;
   font-size: 0.75rem;
-  opacity: 0.55;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .status-refresh-btn {
@@ -107,9 +105,56 @@ body {
   line-height: 1;
   display: flex;
   align-items: center;
-  opacity: 0.8;
+  opacity: 0.7;
 }
 .status-refresh-btn:hover { opacity: 1; }
+
+/* Status Banner */
+.status-banner {
+  padding: 0.6rem 2rem;
+  color: #fff;
+}
+
+.status-banner.operational { background: var(--color-green); }
+.status-banner.degraded { background: var(--color-yellow); }
+.status-banner.partial_outage { background: var(--color-orange); }
+.status-banner.major_outage { background: var(--color-red); }
+.status-banner.maintenance { background: var(--color-blue); }
+
+.status-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.status-banner-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff;
+  flex-shrink: 0;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+.status-banner.operational .status-banner-dot {
+  animation: none;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.status-banner-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.status-banner-msg {
+  font-size: 0.8rem;
+  opacity: 0.85;
+  font-weight: 400;
+}
 
 /* ============ Component Section ============ */
 .component-section {
@@ -120,15 +165,17 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
   padding-bottom: 0.5rem;
-  border-bottom: 2px solid var(--color-gray-200);
+  border-bottom: 2px solid var(--sh-orange);
 }
 
 .component-section-header h2 {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--color-gray-700);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--sh-blue-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .status-legend {
@@ -302,12 +349,14 @@ body {
 }
 
 .incidents-section h2 {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--color-gray-700);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--sh-blue-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
-  border-bottom: 2px solid var(--color-gray-200);
+  border-bottom: 2px solid var(--sh-orange);
 }
 
 .resolved-section h2 {
@@ -618,7 +667,7 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  background: var(--color-gray-800);
+  background: var(--sh-blue-dark);
   color: #fff;
   padding: 0.75rem 1.5rem;
   display: flex;
@@ -706,20 +755,21 @@ body {
   height: 36px;
   border-radius: 50%;
   border: none;
-  background: var(--color-gray-200);
-  color: var(--color-gray-400);
+  background: var(--color-gray-300);
+  color: var(--color-gray-600);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.4;
-  transition: opacity 0.15s;
+  opacity: 0.7;
+  transition: opacity 0.15s, background 0.15s;
   z-index: 50;
 }
 
 .admin-lock-btn:hover {
   opacity: 1;
-  background: var(--color-gray-300);
+  background: var(--sh-blue-dark);
+  color: #fff;
 }
 
 .admin-lock-btn .material-icons {
@@ -781,7 +831,7 @@ body {
 /* ============ Admin Panel ============ */
 .admin-panel {
   background: #fff;
-  border: 2px dashed var(--color-blue);
+  border: 2px dashed var(--sh-orange);
   border-radius: var(--radius);
   padding: 1.25rem;
   margin-bottom: 2rem;
@@ -790,7 +840,7 @@ body {
 .admin-panel h3 {
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--color-blue);
+  color: var(--sh-orange);
   margin-bottom: 1rem;
 }
 
@@ -889,10 +939,10 @@ body {
 }
 
 .btn-primary {
-  background: var(--color-blue);
+  background: var(--sh-orange);
   color: #fff;
 }
-.btn-primary:hover:not(:disabled) { background: #2563eb; }
+.btn-primary:hover:not(:disabled) { background: var(--sh-orange-dark); }
 
 .btn-secondary {
   background: var(--color-gray-100);

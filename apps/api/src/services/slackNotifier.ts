@@ -3,29 +3,30 @@ import { listIncidents } from "./incidents.js";
 import type { Incident } from "@sh/shared";
 import { SEVERITY_LABELS } from "@sh/shared";
 
-const CHECK_INTERVAL_MS = 60_000; // check every minute
-const REMINDER_BEFORE_MS = 5 * 60_000; // alert 5 min before due
-const alreadyNotified = new Set<string>(); // track notified incident+time combos
-
-function isEnabled() {
-  return !!(config.slackBotToken && config.slackChannel);
-}
+const CHECK_INTERVAL_MS = 60_000;
+const REMINDER_BEFORE_MS = 5 * 60_000;
+const alreadyNotified = new Set<string>();
 
 export function startSlackNotifier() {
-  if (!isEnabled()) {
-    console.log("SLACK_BOT_TOKEN or SLACK_CHANNEL not set — Slack reminders disabled");
-    return;
+  if (!config.slackReminderWebhookUrl) {
+    console.log("SLACK_REMINDER_WEBHOOK_URL not set — update reminders disabled");
+  } else {
+    console.log("Slack update reminders enabled");
+    setInterval(checkAndNotify, CHECK_INTERVAL_MS);
   }
-  console.log(`Slack update reminders enabled (channel: ${config.slackChannel})`);
-  setInterval(checkAndNotify, CHECK_INTERVAL_MS);
+  if (!config.slackIncidentWebhookUrl) {
+    console.log("SLACK_INCIDENT_WEBHOOK_URL not set — incident notifications disabled");
+  } else {
+    console.log("Slack incident notifications enabled");
+  }
 }
 
-// --- Incident lifecycle notifications ---
+// --- Incident lifecycle → incident channel ---
 
 export async function notifyIncidentCreated(incident: Incident) {
-  if (!isEnabled()) return;
+  if (!config.slackIncidentWebhookUrl) return;
   const severity = SEVERITY_LABELS[incident.severity] || incident.severity;
-  await sendSlackMessage([
+  await sendToWebhook(config.slackIncidentWebhookUrl, [
     `:red_circle: *New Incident Created*`,
     "",
     `*Title:* ${incident.title}`,
@@ -37,8 +38,8 @@ export async function notifyIncidentCreated(incident: Incident) {
 }
 
 export async function notifyIncidentResolved(incident: Incident) {
-  if (!isEnabled()) return;
-  await sendSlackMessage([
+  if (!config.slackIncidentWebhookUrl) return;
+  await sendToWebhook(config.slackIncidentWebhookUrl, [
     `:large_green_circle: *Incident Resolved*`,
     "",
     `*Title:* ${incident.title}`,
@@ -47,11 +48,11 @@ export async function notifyIncidentResolved(incident: Incident) {
 }
 
 export async function notifyIncidentDeleted(title: string) {
-  if (!isEnabled()) return;
-  await sendSlackMessage(`:wastebasket: *Incident Deleted:* ${title}`);
+  if (!config.slackIncidentWebhookUrl) return;
+  await sendToWebhook(config.slackIncidentWebhookUrl, `:wastebasket: *Incident Deleted:* ${title}`);
 }
 
-// --- Scheduled update reminders ---
+// --- Update reminders → reminder channel ---
 
 async function checkAndNotify() {
   try {
@@ -78,7 +79,7 @@ async function checkAndNotify() {
           ? `was due ${Math.round(-timeUntilDue / 60_000)} min ago`
           : `due in ${Math.round(timeUntilDue / 60_000)} min`;
 
-        await sendSlackMessage([
+        await sendToWebhook(config.slackReminderWebhookUrl, [
           `${urgency} — Status page update needed`,
           "",
           `*Incident:* ${incident.title}`,
@@ -95,23 +96,15 @@ async function checkAndNotify() {
   }
 }
 
-async function sendSlackMessage(text: string) {
+async function sendToWebhook(webhookUrl: string, text: string) {
   try {
-    const res = await fetch("https://slack.com/api/chat.postMessage", {
+    const res = await fetch(webhookUrl, {
       method: "POST",
-      headers: {
-        "Authorization": `Bearer ${config.slackBotToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        channel: config.slackChannel,
-        text,
-      }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
     });
-
-    const data = await res.json() as { ok: boolean; error?: string };
-    if (!data.ok) {
-      console.error(`Slack API error: ${data.error}`);
+    if (!res.ok) {
+      console.error(`Slack webhook failed: ${res.status} ${await res.text()}`);
     }
   } catch (err) {
     console.error("Slack send error:", err);

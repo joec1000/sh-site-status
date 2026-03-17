@@ -18,8 +18,9 @@ export function App() {
   const [panelIncident, setPanelIncident] = useState<Incident | null>(null);
   const [showPanel, setShowPanel] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
-  const [loginKey, setLoginKey] = useState("");
+  const [loginKey, setLoginKey] = useState(() => localStorage.getItem("adminKey") ?? "");
   const [loginError, setLoginError] = useState("");
+  const [showLoginKey, setShowLoginKey] = useState(false);
 
   const refresh = () => {
     refreshStatus();
@@ -39,6 +40,7 @@ export function App() {
       });
       const data = await res.json();
       if (data.ok) {
+        localStorage.setItem("adminKey", loginKey);
         setAdminKey(loginKey);
         setAdminMode(true);
         setShowLoginPrompt(false);
@@ -52,6 +54,7 @@ export function App() {
   };
 
   const handleAdminLogout = () => {
+    localStorage.removeItem("adminKey");
     setAdminMode(false);
     setAdminKey("");
   };
@@ -132,18 +135,23 @@ export function App() {
             </button>
 
             {showLoginPrompt && (
-              <div className="admin-login-overlay" onClick={() => setShowLoginPrompt(false)}>
-                <div className="admin-login-dialog" onClick={(e) => e.stopPropagation()}>
+              <div className="admin-login-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowLoginPrompt(false); }}>
+                <div className="admin-login-dialog">
                   <h3>Admin Login</h3>
                   <p>Enter the admin key to manage this status page.</p>
-                  <input
-                    type="password"
-                    placeholder="Admin key..."
-                    value={loginKey}
-                    onChange={(e) => setLoginKey(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") handleAdminLogin(); }}
-                    autoFocus
-                  />
+                  <div className="admin-key-field">
+                    <input
+                      type={showLoginKey ? "text" : "password"}
+                      placeholder="Admin key..."
+                      value={loginKey}
+                      onChange={(e) => setLoginKey(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") handleAdminLogin(); }}
+                      autoFocus
+                    />
+                    <button type="button" className="admin-key-toggle" onClick={() => setShowLoginKey(!showLoginKey)}>
+                      <span className="material-icons" style={{ fontSize: "1rem" }}>{showLoginKey ? "visibility_off" : "visibility"}</span>
+                    </button>
+                  </div>
                   {loginError && <p className="admin-login-error">{loginError}</p>}
                   <div className="admin-login-actions">
                     <button className="btn btn-primary" onClick={handleAdminLogin}>

@@ -29,7 +29,6 @@ export const DEFAULT_COMPONENTS: { id: string; name: string; description: string
   // Mobile App sub-services
   { id: "mobile-ios", name: "iOS App", description: "iPhone and iPad app", group: "mobile-app", order: 30 },
   { id: "mobile-android", name: "Android App", description: "Android app", group: "mobile-app", order: 31 },
-  { id: "mobile-push", name: "Push Notifications", description: "Push notification delivery", group: "mobile-app", order: 32 },
   // Infrastructure sub-services
   { id: "infra-kubernetes", name: "Kubernetes", description: "Container orchestration and nodes", group: "infrastructure", order: 40 },
   { id: "infra-cloud-run", name: "Cloud Run", description: "Serverless compute platform", group: "infrastructure", order: 41 },

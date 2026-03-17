@@ -21,7 +21,7 @@ export function StatusHeader({ overall, lastRefreshed, onRefresh }: Props) {
         <span className="sh-header-title">System Status</span>
         {timeStr && (
           <div className="sh-header-refresh">
-            <span>{timeStr}</span>
+            <span>Updated: {timeStr}</span>
             <button className="status-refresh-btn" onClick={onRefresh} title="Refresh now">
               <span className="material-icons" style={{ fontSize: "0.95rem" }}>refresh</span>
             </button>

@@ -1,5 +1,6 @@
 import {
   GCS_PATHS,
+  TOP_LEVEL_SERVICE_IDS,
   type CurrentStatus,
   type ComponentStatus,
   type Component,
@@ -22,11 +23,14 @@ export async function regenerateStatus(): Promise<CurrentStatus> {
   ]);
 
   const activeIncidents = allIncidents.filter((i) => i.status !== "resolved");
-  const overall = computeOverallStatus(componentsFile.components, activeIncidents);
+
+  // Sync component statuses from active incidents
+  const components = applyIncidentStatuses(componentsFile.components, activeIncidents);
+  const overall = computeOverallStatus(components, activeIncidents);
 
   const status: CurrentStatus = {
     overall,
-    components: componentsFile.components,
+    components,
     activeIncidents,
     updatedAt: new Date().toISOString(),
   };
@@ -45,6 +49,60 @@ export async function regenerateStatus(): Promise<CurrentStatus> {
   return status;
 }
 
+const SEVERITY_RANK: Record<string, ComponentStatus> = {
+  sev1: "major_outage",
+  sev2: "partial_outage",
+  sev3: "degraded",
+  sev4: "degraded",
+  sev5: "degraded",
+};
+
+const STATUS_RANK: Record<ComponentStatus, number> = {
+  operational: 0,
+  maintenance: 1,
+  degraded: 2,
+  partial_outage: 3,
+  major_outage: 4,
+};
+
+function applyIncidentStatuses(
+  components: Component[],
+  activeIncidents: Incident[],
+): Component[] {
+  // Step 1: Build map of sub-service id → worst status from active incidents
+  const worstStatus = new Map<string, ComponentStatus>();
+
+  for (const incident of activeIncidents) {
+    const incidentStatus = SEVERITY_RANK[incident.severity] || "degraded";
+    for (const compId of incident.components) {
+      const current = worstStatus.get(compId) || "operational";
+      if (STATUS_RANK[incidentStatus] > STATUS_RANK[current]) {
+        worstStatus.set(compId, incidentStatus);
+      }
+    }
+  }
+
+  // Step 2: Apply status to sub-services only (directly affected)
+  const updated = components.map((c) => {
+    const directStatus = worstStatus.get(c.id);
+    return { ...c, status: directStatus || "operational" as ComponentStatus };
+  });
+
+  // Step 3: Derive parent card status from worst child status
+  const topLevelIds = new Set(TOP_LEVEL_SERVICE_IDS as readonly string[]);
+  for (const comp of updated) {
+    if (!topLevelIds.has(comp.id)) continue;
+    const children = updated.filter((c) => c.group === comp.id);
+    if (children.length === 0) continue;
+    const worstChild = children.reduce<ComponentStatus>((worst, child) => {
+      return STATUS_RANK[child.status] > STATUS_RANK[worst] ? child.status : worst;
+    }, "operational");
+    comp.status = worstChild;
+  }
+
+  return updated;
+}
+
 function computeOverallStatus(
   _components: Component[],
   activeIncidents: Incident[],
@@ -60,10 +118,9 @@ function computeOverallStatus(
   const hasSev2 = activeIncidents.some((i) => i.severity === "sev2");
   if (hasSev2) return "partial_outage";
 
-  // SEV-3 (minor) → degraded
-  const hasSev3 = activeIncidents.some((i) => i.severity === "sev3");
-  if (hasSev3) return "degraded";
+  // SEV-3/4/5 → degraded
+  if (activeIncidents.length > 0) return "degraded";
 
-  // No active incidents (or only sev4) → operational
+  // No active incidents → operational
   return "operational";
 }

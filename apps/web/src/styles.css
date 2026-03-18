@@ -1004,9 +1004,47 @@ body {
 }
 
 .chip.selected {
-  background: var(--color-blue);
+  background: var(--sh-orange);
   color: #fff;
-  border-color: var(--color-blue);
+  border-color: var(--sh-orange);
+}
+
+.chip.partial {
+  background: #fff;
+  color: var(--sh-orange);
+  border-color: var(--sh-orange);
+}
+
+/* Component Picker (grouped) */
+.component-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.component-picker-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.component-picker-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-gray-600);
+  min-width: 100px;
+  flex-shrink: 0;
+  padding-top: 0.3rem;
+}
+
+.component-picker-children {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.chip-all {
+  font-weight: 600;
 }
 
 /* ============ Loading / Error ============ */

@@ -34,6 +34,47 @@ export async function updateComponentStatus(
   return component;
 }
 
+// Map incident severity to component status
+const SEVERITY_TO_COMPONENT_STATUS: Record<string, ComponentStatus> = {
+  sev1: "major_outage",
+  sev2: "partial_outage",
+  sev3: "degraded",
+  sev4: "degraded",
+  sev5: "degraded",
+};
+
+export async function setComponentsStatus(
+  componentIds: string[],
+  status: ComponentStatus,
+): Promise<void> {
+  if (componentIds.length === 0) return;
+  const result = await readJson<ComponentsFile>(GCS_PATHS.COMPONENTS);
+  const file = result?.data ?? (await initializeComponents());
+  const generation = result?.generation ?? 0;
+  const now = new Date().toISOString();
+
+  for (const id of componentIds) {
+    // Update the component itself
+    const comp = file.components.find((c) => c.id === id);
+    if (comp) {
+      comp.status = status;
+      comp.updatedAt = now;
+    }
+    // Also update all children (sub-services grouped under this component)
+    for (const child of file.components.filter((c) => c.group === id)) {
+      child.status = status;
+      child.updatedAt = now;
+    }
+  }
+
+  file.updatedAt = now;
+  await writeJson(GCS_PATHS.COMPONENTS, file, generation);
+}
+
+export function severityToComponentStatus(severity: string): ComponentStatus {
+  return SEVERITY_TO_COMPONENT_STATUS[severity] || "degraded";
+}
+
 async function initializeComponents(): Promise<ComponentsFile> {
   const now = new Date().toISOString();
   const file: ComponentsFile = {

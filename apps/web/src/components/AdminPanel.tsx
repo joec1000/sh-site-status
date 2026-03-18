@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import type { Incident, IncidentSeverity } from "@sh/shared";
-import { DEFAULT_COMPONENTS, SEVERITY_LABELS, SEVERITY_DESCRIPTIONS } from "@sh/shared";
+import { DEFAULT_COMPONENTS, TOP_LEVEL_SERVICE_IDS, SEVERITY_LABELS, SEVERITY_DESCRIPTIONS } from "@sh/shared";
 import { adminApi } from "../hooks/useApi.js";
 
 const SEVERITIES: IncidentSeverity[] = ["sev1", "sev2", "sev3", "sev4", "sev5"];
@@ -155,19 +155,48 @@ export function AdminPanel({ adminKey, incident, onDone, onClose }: Props) {
           />
         </div>
 
-        {/* Affected Components */}
+        {/* Affected Components — grouped by parent */}
         <div className="form-group" style={{ marginBottom: "0.75rem" }}>
           <label>Affected Components</label>
-          <div className="multiselect-chips">
-            {DEFAULT_COMPONENTS.map((c) => (
-              <span
-                key={c.id}
-                className={`chip ${components.includes(c.id) ? "selected" : ""}`}
-                onClick={() => toggleComponent(c.id)}
-              >
-                {c.name}
-              </span>
-            ))}
+          <div className="component-picker">
+            {(TOP_LEVEL_SERVICE_IDS as readonly string[]).map((parentId) => {
+              const parent = DEFAULT_COMPONENTS.find((c) => c.id === parentId);
+              if (!parent) return null;
+              const children = DEFAULT_COMPONENTS.filter((c) => c.group === parentId);
+              const allChildIds = children.map((c) => c.id);
+              const allSelected = allChildIds.length > 0 && allChildIds.every((id) => components.includes(id));
+
+              const toggleAll = () => {
+                if (allSelected) {
+                  setComponents((prev) => prev.filter((id) => !allChildIds.includes(id)));
+                } else {
+                  setComponents((prev) => [...new Set([...prev, ...allChildIds])]);
+                }
+              };
+
+              return (
+                <div key={parentId} className="component-picker-group">
+                  <span className="component-picker-label">{parent.name}</span>
+                  <div className="component-picker-children">
+                    <span
+                      className={`chip chip-all ${allSelected ? "selected" : ""}`}
+                      onClick={toggleAll}
+                    >
+                      All
+                    </span>
+                    {children.map((c) => (
+                      <span
+                        key={c.id}
+                        className={`chip ${components.includes(c.id) ? "selected" : ""}`}
+                        onClick={() => toggleComponent(c.id)}
+                      >
+                        {c.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 

@@ -8,6 +8,7 @@ import {
 } from "@sh/shared";
 import { readJson, writeJson, listFiles, deleteJson } from "./storage.js";
 import { regenerateStatus } from "./status.js";
+import { setComponentsStatus, severityToComponentStatus } from "./components.js";
 
 export async function listIncidents(): Promise<Incident[]> {
   const files = await listFiles(GCS_PATHS.INCIDENTS_DIR + "/");
@@ -62,6 +63,10 @@ export async function createIncident(req: CreateIncidentRequest): Promise<Incide
   };
 
   await writeJson(GCS_PATHS.incidentFile(id), incident, 0);
+  // Set affected components to match incident severity
+  if (incident.components.length > 0) {
+    await setComponentsStatus(incident.components, severityToComponentStatus(incident.severity));
+  }
   await regenerateStatus();
   return incident;
 }
@@ -99,6 +104,12 @@ export async function postIncidentUpdate(
   }
 
   await writeJson(GCS_PATHS.incidentFile(incidentId), incident, generation);
+  // Update affected component statuses
+  if (incident.components.length > 0) {
+    if (req.status === "resolved") {
+      await setComponentsStatus(incident.components, "operational");
+    }
+  }
   await regenerateStatus();
   return incident;
 }

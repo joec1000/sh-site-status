@@ -88,11 +88,13 @@ body {
 }
 
 .sh-header-refresh {
-  margin-left: auto;
+  position: absolute;
+  right: 2rem;
+  bottom: 0.35rem;
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.7);
 }
@@ -118,6 +120,7 @@ body {
   align-items: center;
   justify-content: center;
   min-height: 48px;
+  position: relative;
 }
 
 .status-banner.operational { background: var(--color-green); }
@@ -1097,6 +1100,133 @@ body {
 
 .chip-all {
   font-weight: 600;
+}
+
+/* ============ Quick Links Dropdown ============ */
+.sh-header-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.quick-links-dropdown {
+  position: relative;
+}
+
+.quick-links-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.8);
+  font-family: var(--font-family);
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: all 0.15s;
+  line-height: 1;
+}
+
+.quick-links-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.quick-links-btn-label {
+  margin: 0 0.1rem;
+}
+
+.quick-links-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 280px;
+  background: #fff;
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  z-index: 300;
+  padding: 0.35rem 0;
+  animation: quickLinksIn 0.12s ease-out;
+}
+
+@keyframes quickLinksIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.quick-links-popover-header {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.35rem 0.75rem;
+  border-top: 1px solid var(--color-gray-200);
+  border-bottom: 1px solid var(--color-gray-200);
+  margin-bottom: 0.25rem;
+  background: var(--color-gray-50);
+}
+
+.quick-links-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  text-decoration: none;
+  color: var(--color-gray-700);
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: background 0.1s;
+}
+
+.quick-links-row:hover {
+  background: var(--color-gray-50);
+  color: var(--sh-blue);
+}
+
+.quick-links-row-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  flex-shrink: 0;
+}
+
+.quick-links-row-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quick-links-row-ext {
+  font-size: 0.7rem !important;
+  color: var(--color-gray-300);
+  flex-shrink: 0;
+}
+
+.quick-links-row:hover .quick-links-row-ext {
+  color: var(--color-gray-400);
+}
+
+.quick-links-separator {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.35rem 0.75rem;
+  border-bottom: 1px solid var(--color-gray-200);
+  border-top: 1px solid var(--color-gray-200);
+  margin-bottom: 0.25rem;
+  margin-top: 0.35rem;
+  background: var(--color-gray-50);
 }
 
 /* ============ Loading / Error ============ */

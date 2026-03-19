@@ -85,7 +85,7 @@ export function App() {
 
   return (
     <div className="page">
-      <StatusHeader overall={status?.overall ?? "operational"} lastRefreshed={lastRefreshed} onRefresh={refresh} />
+      <StatusHeader overall={status?.overall ?? "operational"} lastRefreshed={lastRefreshed} onRefresh={refresh} adminMode={adminMode} />
 
       <div className="container">
         <ComponentCards

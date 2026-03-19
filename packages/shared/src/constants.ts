@@ -92,6 +92,20 @@ export const COMMUNICATION_MATRIX: Record<string, { channels: string; audience: 
   sev5: { channels: "Backlog", audience: "Business Teams (CX/PSI)", frequency: "As needed" },
 };
 
+export const QUICK_LINKS: { icon: "slack" | "web"; name: string; url: string }[] = [
+  { icon: "slack", name: "#incident-alert-hub", url: "https://supplyhouseworkspace.slack.com/archives/C078SMWB90C" },
+  { icon: "slack", name: "#help-desk", url: "https://supplyhouseworkspace.slack.com/archives/C09HT2MGB2L" },
+  { icon: "web", name: "SupplyHouse.com", url: "https://www.supplyhouse.com" },
+];
+
+export const ADMIN_QUICK_LINKS: { icon: "slack" | "web"; name: string; url: string }[] = [
+  { icon: "slack", name: "#critical-outage-devteam", url: "https://supplyhouseworkspace.slack.com/archives/C05QPPB63LL" },
+  { icon: "slack", name: "#help-desk-heroes", url: "https://supplyhouseworkspace.slack.com/archives/C013U0RKBHA" },
+  { icon: "web", name: "Incident Response Process", url: "https://supplyhouse.atlassian.net/wiki/spaces/SUPPLYHOUS/pages/3057778697/Critical+Production+Incident+Response+Process" },
+  { icon: "web", name: "Kibana", url: "http://34.74.189.135:5601/s/mobile-apps/app/discover#/?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-3h,to:now))&_a=(columns:!(),filters:!(),index:d8b1c880-dffa-11eb-81e5-51b88ab061d6,interval:auto,query:(language:kuery,query:'ERROR%20AND%20*order*'),sort:!(!('@timestamp',desc)))" },
+  { icon: "web", name: "Dynatrace", url: "https://bxl35886.live.dynatrace.com/#problems/problemdetails;pid=3762788777378858850_1773886560000V2" },
+];
+
 export const COMPONENT_GROUPS = ["Services"] as const;
 
 export const TOP_LEVEL_SERVICE_IDS = ["website", "admin-portal", "mobile-app", "infrastructure", "database", "networking"] as const;

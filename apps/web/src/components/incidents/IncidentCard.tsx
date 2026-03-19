@@ -178,7 +178,6 @@ export function IncidentCard({ incident, expanded, onToggle, adminMode, adminKey
 
       {showSlackModal && (
         <SlackMessageModal
-          adminKey={adminKey}
           initialMessage={buildIncidentSlackTemplate(incident)}
           statusDot={statusToDot(incident.status)}
           onClose={() => setShowSlackModal(false)}

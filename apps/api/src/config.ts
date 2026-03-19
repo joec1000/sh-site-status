@@ -5,7 +5,6 @@ export function getConfig() {
     gcsBucket: process.env.GCS_BUCKET || "",
     adminKey: process.env.ADMIN_KEY || "",
     corsOrigin: process.env.CORS_ORIGIN || "*",
-    slackIncidentWebhookUrl: process.env.SLACK_INCIDENT_WEBHOOK_URL || "",
     slackReminderWebhookUrl: process.env.SLACK_REMINDER_WEBHOOK_URL || "",
   };
 }

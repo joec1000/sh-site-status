@@ -11,7 +11,6 @@ import {
   NotFoundError,
 } from "../services/incidents.js";
 import { requireAdmin } from "../middleware/auth.js";
-import { notifyIncidentCreated, notifyIncidentResolved, notifyIncidentDeleted } from "../services/slackNotifier.js";
 
 const router: IRouter = Router();
 
@@ -58,7 +57,6 @@ router.post("/", requireAdmin, async (req, res) => {
       actions,
       nextUpdateTime,
     });
-    notifyIncidentCreated(incident);
     res.status(201).json({ ok: true, data: incident });
   } catch (err) {
     console.error("POST /incidents error:", err);
@@ -82,7 +80,6 @@ router.post("/:id/updates", requireAdmin, async (req, res) => {
       risksUnknowns,
       nextUpdateTime,
     });
-    if (status === "resolved") notifyIncidentResolved(incident);
     res.json({ ok: true, data: incident });
   } catch (err) {
     if (err instanceof NotFoundError) {
@@ -113,9 +110,7 @@ router.patch("/:id", requireAdmin, async (req, res) => {
 
 router.delete("/:id", requireAdmin, async (req, res) => {
   try {
-    const existing = await getIncident(req.params.id as string);
     await deleteIncident(req.params.id as string);
-    if (existing) notifyIncidentDeleted(existing.title);
     res.json({ ok: true });
   } catch (err) {
     if (err instanceof NotFoundError) {

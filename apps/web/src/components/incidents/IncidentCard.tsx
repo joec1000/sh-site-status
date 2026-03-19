@@ -1,8 +1,10 @@
+import { useState } from "react";
 import type { Incident } from "@sh/shared";
 import { SEVERITY_LABELS, INCIDENT_STATUS_LABELS, DEFAULT_COMPONENTS, COMMUNICATION_MATRIX } from "@sh/shared";
-import { SEVERITY_COLOR, formatTime } from "./incidentUtils.js";
+import { SEVERITY_COLOR, formatTime, buildIncidentSlackTemplate, statusToDot } from "./incidentUtils.js";
 import { TimelineEntry } from "./TimelineEntry.js";
 import { UpdateForm } from "./UpdateForm.js";
+import { SlackMessageModal } from "./SlackMessageModal.js";
 
 interface Props {
   incident: Incident;
@@ -15,6 +17,7 @@ interface Props {
 }
 
 export function IncidentCard({ incident, expanded, onToggle, adminMode, adminKey, onUpdate, onEdit }: Props) {
+  const [showSlackModal, setShowSlackModal] = useState(false);
   const latestUpdate = incident.updates[incident.updates.length - 1];
   const isResolved = incident.status === "resolved";
   const sevColor = SEVERITY_COLOR[incident.severity] ?? "low";
@@ -158,9 +161,28 @@ export function IncidentCard({ incident, expanded, onToggle, adminMode, adminKey
           </div>
 
           {adminMode && (
-            <UpdateForm incidentId={incident.id} adminKey={adminKey} onUpdate={onUpdate} />
+            <>
+              <UpdateForm incidentId={incident.id} adminKey={adminKey} onUpdate={onUpdate} />
+              <button
+                className="btn btn-sm btn-secondary"
+                onClick={() => setShowSlackModal(true)}
+                style={{ marginTop: "0.75rem" }}
+              >
+                <span className="material-icons" style={{ fontSize: "0.85rem" }}>send</span>
+                Post to Slack
+              </button>
+            </>
           )}
         </div>
+      )}
+
+      {showSlackModal && (
+        <SlackMessageModal
+          adminKey={adminKey}
+          initialMessage={buildIncidentSlackTemplate(incident)}
+          statusDot={statusToDot(incident.status)}
+          onClose={() => setShowSlackModal(false)}
+        />
       )}
     </div>
   );

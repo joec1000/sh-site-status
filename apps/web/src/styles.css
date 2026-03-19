@@ -833,6 +833,58 @@ body {
   margin-top: 0.75rem;
 }
 
+/* ============ Slack Message Modal ============ */
+.slack-modal {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  width: 520px;
+  max-width: 90vw;
+  box-shadow: var(--shadow-lg);
+}
+
+.slack-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.slack-modal-header h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.slack-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.slack-dot--red { background: var(--color-red); }
+.slack-dot--yellow { background: var(--color-yellow); }
+.slack-dot--green { background: var(--color-green); }
+
+.slack-modal-hint {
+  font-size: 0.8rem;
+  color: var(--color-gray-500);
+  margin-bottom: 0.75rem;
+}
+
+.slack-modal-textarea {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--color-gray-300);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-family: monospace;
+  line-height: 1.5;
+  resize: vertical;
+  color: var(--color-gray-800);
+}
+
 /* ============ Admin Panel ============ */
 .admin-panel {
   background: #fff;

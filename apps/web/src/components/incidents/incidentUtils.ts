@@ -1,4 +1,5 @@
-import type { IncidentStatus } from "@sh/shared";
+import type { Incident, IncidentStatus, IncidentUpdate } from "@sh/shared";
+import { DEFAULT_COMPONENTS } from "@sh/shared";
 
 export const INCIDENT_STATUSES: IncidentStatus[] = [
   "investigating",
@@ -29,4 +30,36 @@ export function isoToDatetimeLocal(iso: string): string {
   const d = new Date(iso);
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function compNames(ids: string[]): string {
+  return ids.map((id) => DEFAULT_COMPONENTS.find((c) => c.id === id)?.name ?? id).join(" and ");
+}
+
+// Simple one-liner format: 🟡 Team is responding to an issue with X affecting Y
+export function buildIncidentSlackTemplate(incident: Incident): string {
+  const components = incident.components.length > 0 ? compNames(incident.components) : "services";
+  const latest = incident.updates[incident.updates.length - 1];
+  if (latest) return latest.message;
+  return `Team is responding to an issue with ${components}`;
+}
+
+// 🟢 Resolution message
+export function buildResolutionSlackTemplate(incident: Incident): string {
+  const components = incident.components.length > 0 ? compNames(incident.components) : "services";
+  if (incident.rootCause) {
+    return `System should be stable now. ${incident.rootCause}`;
+  }
+  return `System should be stable now. The issue affecting ${components} has been resolved.`;
+}
+
+// 🔴 Update message
+export function buildUpdateSlackTemplate(_incident: Incident, update: IncidentUpdate): string {
+  return update.message;
+}
+
+export function statusToDot(status: IncidentStatus): "red" | "yellow" | "green" {
+  if (status === "resolved") return "green";
+  if (status === "monitoring" || status === "identified") return "yellow";
+  return "red";
 }

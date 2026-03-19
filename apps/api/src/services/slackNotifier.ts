@@ -1,58 +1,19 @@
 import { config } from "../config.js";
 import { listIncidents } from "./incidents.js";
-import type { Incident } from "@sh/shared";
 import { SEVERITY_LABELS } from "@sh/shared";
 
-const CHECK_INTERVAL_MS = 60_000;
-const REMINDER_BEFORE_MS = 5 * 60_000;
+const CHECK_INTERVAL_MS = 60_000; // check every minute
+const REMINDER_BEFORE_MS = 5 * 60_000; // alert 5 min before due
 const alreadyNotified = new Set<string>();
 
 export function startSlackNotifier() {
   if (!config.slackReminderWebhookUrl) {
     console.log("SLACK_REMINDER_WEBHOOK_URL not set — update reminders disabled");
-  } else {
-    console.log("Slack update reminders enabled");
-    setInterval(checkAndNotify, CHECK_INTERVAL_MS);
+    return;
   }
-  if (!config.slackIncidentWebhookUrl) {
-    console.log("SLACK_INCIDENT_WEBHOOK_URL not set — incident notifications disabled");
-  } else {
-    console.log("Slack incident notifications enabled");
-  }
+  console.log("Slack update reminders enabled");
+  setInterval(checkAndNotify, CHECK_INTERVAL_MS);
 }
-
-// --- Incident lifecycle → incident channel ---
-
-export async function notifyIncidentCreated(incident: Incident) {
-  if (!config.slackIncidentWebhookUrl) return;
-  const severity = SEVERITY_LABELS[incident.severity] || incident.severity;
-  await sendToWebhook(config.slackIncidentWebhookUrl, [
-    `:red_circle: *New Incident Created*`,
-    "",
-    `*Title:* ${incident.title}`,
-    `*Severity:* ${severity}`,
-    `*Owner:* ${incident.owner || "Unassigned"}`,
-    `*Impact:* ${incident.impact || "—"}`,
-    incident.nextUpdateTime ? `*Next Update:* ${incident.nextUpdateTime}` : "",
-  ].filter(Boolean).join("\n"));
-}
-
-export async function notifyIncidentResolved(incident: Incident) {
-  if (!config.slackIncidentWebhookUrl) return;
-  await sendToWebhook(config.slackIncidentWebhookUrl, [
-    `:large_green_circle: *Incident Resolved*`,
-    "",
-    `*Title:* ${incident.title}`,
-    `*Resolved at:* ${incident.resolvedAt ?? new Date().toISOString()}`,
-  ].join("\n"));
-}
-
-export async function notifyIncidentDeleted(title: string) {
-  if (!config.slackIncidentWebhookUrl) return;
-  await sendToWebhook(config.slackIncidentWebhookUrl, `:wastebasket: *Incident Deleted:* ${title}`);
-}
-
-// --- Update reminders → reminder channel ---
 
 async function checkAndNotify() {
   try {

@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { IncidentStatus } from "@sh/shared";
 import { INCIDENT_STATUS_LABELS } from "@sh/shared";
 import { adminApi } from "../../hooks/useApi.js";
-import { INCIDENT_STATUSES } from "./incidentUtils.js";
+import { INCIDENT_STATUSES, isoToDatetimeLocal } from "./incidentUtils.js";
 
 interface Props {
   incidentId: string;
@@ -118,7 +118,7 @@ export function UpdateForm({ incidentId, adminKey, onUpdate }: Props) {
           {!isResolving && (
             <div className="form-group">
               <label>Next Update Time</label>
-              <input type="text" value={nextUpdateTime} onChange={(e) => setNextUpdateTime(e.target.value)} placeholder="e.g. 30 minutes, 2:00 PM ET" />
+              <input type="datetime-local" value={nextUpdateTime ? isoToDatetimeLocal(nextUpdateTime) : ""} onChange={(e) => setNextUpdateTime(e.target.value ? new Date(e.target.value).toISOString() : "")} />
             </div>
           )}
         </div>

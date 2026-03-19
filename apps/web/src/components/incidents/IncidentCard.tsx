@@ -60,7 +60,7 @@ export function IncidentCard({ incident, expanded, onToggle, adminMode, adminKey
               )}
               {incident.nextUpdateTime && !isResolved && (
                 <span className="incident-meta-item next-update">
-                  Next update: {incident.nextUpdateTime}
+                  Next update: {formatTime(incident.nextUpdateTime)}
                 </span>
               )}
             </div>
@@ -178,8 +178,9 @@ export function IncidentCard({ incident, expanded, onToggle, adminMode, adminKey
 
       {showSlackModal && (
         <SlackMessageModal
+          adminKey={adminKey}
           initialMessage={buildIncidentSlackTemplate(incident)}
-          statusDot={statusToDot(incident.status)}
+          statusDot={statusToDot(incident.status, incident.severity)}
           onClose={() => setShowSlackModal(false)}
         />
       )}

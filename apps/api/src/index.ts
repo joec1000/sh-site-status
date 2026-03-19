@@ -27,6 +27,27 @@ app.post("/api/auth/verify", (req, res) => {
   res.json({ ok: key === config.adminKey });
 });
 
+// Slack proxy — browser can't call Slack webhooks directly due to CORS
+app.post("/api/slack/send", (req, res) => {
+  const key = req.headers["x-admin-key"] as string | undefined;
+  if (!key || key !== config.adminKey) {
+    res.status(401).json({ ok: false, error: "Unauthorized" });
+    return;
+  }
+  const webhookUrl = process.env.SLACK_INCIDENT_WEBHOOK_URL || process.env.SLACK_REMINDER_WEBHOOK_URL;
+  if (!webhookUrl) {
+    res.status(400).json({ ok: false, error: "SLACK_INCIDENT_WEBHOOK_URL not configured" });
+    return;
+  }
+  fetch(webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text: req.body.text }),
+  })
+    .then((r) => res.json({ ok: r.ok }))
+    .catch(() => res.status(500).json({ ok: false, error: "Failed to post to Slack" }));
+});
+
 app.use("/api/status", statusRoutes);
 app.use("/api/incidents", incidentRoutes);
 app.use("/api/components", componentRoutes);
@@ -54,6 +75,7 @@ app.use((_req, res, next) => {
 app.listen(config.port, () => {
   console.log(`API listening on :${config.port}`);
   console.log(`Serving frontend from ${webDist}`);
-  console.log(`index.html exists: ${fs.existsSync(resolve(webDist, "index.html"))}`);
+  console.log(`SLACK_INCIDENT_WEBHOOK_URL: ${process.env.SLACK_INCIDENT_WEBHOOK_URL ? "SET" : "NOT SET"}`);
+  console.log(`SLACK_REMINDER_WEBHOOK_URL: ${process.env.SLACK_REMINDER_WEBHOOK_URL ? "SET" : "NOT SET"}`);
   startSlackNotifier();
 });

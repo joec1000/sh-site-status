@@ -181,6 +181,7 @@ export function ResolvedCard({ incident, adminKey, onUpdate, onEdit }: Props) {
 
       {showSlackModal && (
         <SlackMessageModal
+          adminKey={adminKey}
           initialMessage={buildResolutionSlackTemplate(incident)}
           statusDot="green"
           onClose={() => setShowSlackModal(false)}

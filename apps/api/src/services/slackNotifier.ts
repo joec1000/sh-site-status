@@ -22,10 +22,16 @@ async function checkAndNotify() {
 
     for (const incident of incidents) {
       if (incident.status === "resolved") continue;
-      if (!incident.nextUpdateTime) continue;
+      if (!incident.nextUpdateTime) { continue; }
 
       const dueAt = new Date(incident.nextUpdateTime).getTime();
-      if (isNaN(dueAt)) continue;
+      if (isNaN(dueAt)) {
+        console.log(`[Slack Reminder] Skipping "${incident.title}" — nextUpdateTime "${incident.nextUpdateTime}" is not a valid date`);
+        continue;
+      }
+
+      const minsUntilDue = Math.round((dueAt - now) / 60_000);
+      console.log(`[Slack Reminder] "${incident.title}" — next update ${incident.nextUpdateTime} (${minsUntilDue} min away)`);
 
       const key = `${incident.id}:${incident.nextUpdateTime}`;
       if (alreadyNotified.has(key)) continue;

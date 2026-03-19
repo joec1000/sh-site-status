@@ -129,7 +129,7 @@ export function TimelineEntry({ update, incidentId, adminMode, adminKey, onUpdat
           )}
           {update.nextUpdateTime && (
             <div className="timeline-next-update">
-              Next update: {update.nextUpdateTime}
+              Next update: {formatTime(update.nextUpdateTime)}
             </div>
           )}
         </>

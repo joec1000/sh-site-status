@@ -1,8 +1,9 @@
 import { useState } from "react";
 
-const SLACK_WEBHOOK_URL = import.meta.env.VITE_SLACK_WEBHOOK_URL || "";
+const API_BASE = import.meta.env.VITE_API_URL || "";
 
 interface Props {
+  adminKey: string;
   initialMessage: string;
   statusDot?: "red" | "yellow" | "green";
   onClose: () => void;
@@ -14,20 +15,26 @@ const DOT_EMOJI: Record<string, string> = {
   green: ":large_green_circle:",
 };
 
-export function SlackMessageModal({ initialMessage, statusDot, onClose }: Props) {
+export function SlackMessageModal({ adminKey, initialMessage, statusDot, onClose }: Props) {
   const [message, setMessage] = useState(initialMessage);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
 
   const handleSend = async () => {
-    if (!message.trim() || !SLACK_WEBHOOK_URL) return;
+    if (!message.trim()) return;
     setSending(true);
     try {
       const prefix = statusDot ? `${DOT_EMOJI[statusDot]} ` : "";
-      await fetch(SLACK_WEBHOOK_URL, {
+      const res = await fetch(`${API_BASE}/api/slack/send`, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-key": adminKey,
+        },
         body: JSON.stringify({ text: prefix + message }),
       });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "Failed to send");
       setSent(true);
       setTimeout(onClose, 1200);
     } catch (err) {
@@ -36,20 +43,6 @@ export function SlackMessageModal({ initialMessage, statusDot, onClose }: Props)
       setSending(false);
     }
   };
-
-  if (!SLACK_WEBHOOK_URL) {
-    return (
-      <div className="admin-login-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-        <div className="slack-modal">
-          <h3>Slack not configured</h3>
-          <p className="slack-modal-hint">Set <code>VITE_SLACK_WEBHOOK_URL</code> in your .env to enable posting to Slack.</p>
-          <div className="admin-login-actions">
-            <button className="btn btn-secondary" onClick={onClose}>Close</button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="admin-login-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
@@ -63,7 +56,7 @@ export function SlackMessageModal({ initialMessage, statusDot, onClose }: Props)
           className="slack-modal-textarea"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          rows={12}
+          rows={8}
           autoFocus
         />
         <div className="admin-login-actions">

@@ -58,8 +58,9 @@ export function buildUpdateSlackTemplate(_incident: Incident, update: IncidentUp
   return update.message;
 }
 
-export function statusToDot(status: IncidentStatus): "red" | "yellow" | "green" {
+export function statusToDot(status: IncidentStatus, severity?: string): "red" | "yellow" | "green" {
   if (status === "resolved") return "green";
-  if (status === "monitoring" || status === "identified") return "yellow";
-  return "red";
+  // Based on severity: sev1/sev2 = red, sev3/sev4/sev5 = yellow
+  if (severity === "sev1" || severity === "sev2") return "red";
+  return "yellow";
 }

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import type { Incident, IncidentSeverity } from "@sh/shared";
 import { DEFAULT_COMPONENTS, TOP_LEVEL_SERVICE_IDS, SEVERITY_LABELS, SEVERITY_DESCRIPTIONS } from "@sh/shared";
+import { isoToDatetimeLocal, buildIncidentSlackTemplate, statusToDot } from "./incidents/incidentUtils.js";
+import { SlackMessageModal } from "./incidents/SlackMessageModal.js";
 import { adminApi } from "../hooks/useApi.js";
 
 const SEVERITIES: IncidentSeverity[] = ["sev1", "sev2", "sev3", "sev4", "sev5"];
@@ -30,6 +32,9 @@ export function AdminPanel({ adminKey, incident, onDone, onClose }: Props) {
   const [rootCause, setRootCause] = useState(incident?.rootCause ?? "");
   const [followUpsText, setFollowUpsText] = useState(incident?.followUps?.join("\n") ?? "");
   const [submitting, setSubmitting] = useState(false);
+  const [showSlackModal, setShowSlackModal] = useState(false);
+  const [slackMessage, setSlackMessage] = useState("");
+  const [slackDot, setSlackDot] = useState<"red" | "yellow" | "green">("yellow");
 
   const isResolved = incident?.status === "resolved";
 
@@ -55,7 +60,7 @@ export function AdminPanel({ adminKey, incident, onDone, onClose }: Props) {
     );
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, postToSlack = false) => {
     e.preventDefault();
     if (!title.trim()) return;
     if (!isEdit && !message.trim()) return;
@@ -75,7 +80,14 @@ export function AdminPanel({ adminKey, incident, onDone, onClose }: Props) {
         });
       }
       onDone();
-      onClose();
+      if (postToSlack) {
+        const compNames = components.map((id) => DEFAULT_COMPONENTS.find((c) => c.id === id)?.name ?? id).join(" and ");
+        setSlackMessage(message || `Team is responding to an issue affecting ${compNames || "services"}`);
+        setSlackDot(statusToDot("investigating", severity));
+        setShowSlackModal(true);
+      } else {
+        onClose();
+      }
     } catch (err) {
       alert(err instanceof Error ? err.message : `Failed to ${isEdit ? "update" : "create"} incident`);
     } finally {
@@ -214,10 +226,9 @@ export function AdminPanel({ adminKey, incident, onDone, onClose }: Props) {
           <div className="form-group">
             <label>Next Update Time</label>
             <input
-              type="text"
-              value={nextUpdateTime}
-              onChange={(e) => setNextUpdateTime(e.target.value)}
-              placeholder="e.g. 30 minutes, 2:00 PM ET"
+              type="datetime-local"
+              value={nextUpdateTime ? isoToDatetimeLocal(nextUpdateTime) : ""}
+              onChange={(e) => setNextUpdateTime(e.target.value ? new Date(e.target.value).toISOString() : "")}
             />
           </div>
         </div>
@@ -276,11 +287,31 @@ export function AdminPanel({ adminKey, incident, onDone, onClose }: Props) {
           >
             {submitting ? (isEdit ? "Saving..." : "Declaring...") : (isEdit ? "Save Changes" : "Declare Incident")}
           </button>
+          {!isEdit && (
+            <button
+              className="btn btn-secondary"
+              type="button"
+              disabled={submitting || !title.trim() || !message.trim()}
+              onClick={(e) => handleSubmit(e as unknown as React.FormEvent, true)}
+            >
+              <span className="material-icons" style={{ fontSize: "0.85rem" }}>send</span>
+              Declare & Post to Slack
+            </button>
+          )}
           <button className="btn btn-secondary" type="button" onClick={onClose}>
             Cancel
           </button>
         </div>
       </form>
+
+      {showSlackModal && (
+        <SlackMessageModal
+          adminKey={adminKey}
+          initialMessage={slackMessage}
+          statusDot={slackDot}
+          onClose={() => { setShowSlackModal(false); onClose(); }}
+        />
+      )}
     </div>
   );
 }

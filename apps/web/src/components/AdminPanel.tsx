@@ -60,10 +60,25 @@ export function AdminPanel({ adminKey, incident, onDone, onClose }: Props) {
     );
   };
 
-  const handleSubmit = async (e: React.FormEvent, postToSlack = false) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
     if (!isEdit && !message.trim()) return;
+
+    // For new incidents, open Slack modal first before creating
+    if (!isEdit) {
+      const compNames = components.map((id) => DEFAULT_COMPONENTS.find((c) => c.id === id)?.name ?? id).join(" and ");
+      setSlackMessage(message || `Team is responding to an issue affecting ${compNames || "services"}`);
+      setSlackDot(statusToDot("investigating", severity));
+      setShowSlackModal(true);
+      return;
+    }
+
+    // Edit mode — save directly
+    await saveIncident();
+  };
+
+  const saveIncident = async () => {
     setSubmitting(true);
     try {
       if (isEdit) {
@@ -80,14 +95,7 @@ export function AdminPanel({ adminKey, incident, onDone, onClose }: Props) {
         });
       }
       onDone();
-      if (postToSlack) {
-        const compNames = components.map((id) => DEFAULT_COMPONENTS.find((c) => c.id === id)?.name ?? id).join(" and ");
-        setSlackMessage(message || `Team is responding to an issue affecting ${compNames || "services"}`);
-        setSlackDot(statusToDot("investigating", severity));
-        setShowSlackModal(true);
-      } else {
-        onClose();
-      }
+      onClose();
     } catch (err) {
       alert(err instanceof Error ? err.message : `Failed to ${isEdit ? "update" : "create"} incident`);
     } finally {
@@ -287,17 +295,6 @@ export function AdminPanel({ adminKey, incident, onDone, onClose }: Props) {
           >
             {submitting ? (isEdit ? "Saving..." : "Declaring...") : (isEdit ? "Save Changes" : "Declare Incident")}
           </button>
-          {!isEdit && (
-            <button
-              className="btn btn-secondary"
-              type="button"
-              disabled={submitting || !title.trim() || !message.trim()}
-              onClick={(e) => handleSubmit(e as unknown as React.FormEvent, true)}
-            >
-              <span className="material-icons" style={{ fontSize: "0.85rem" }}>send</span>
-              Declare & Post to Slack
-            </button>
-          )}
           <button className="btn btn-secondary" type="button" onClick={onClose}>
             Cancel
           </button>
@@ -309,7 +306,7 @@ export function AdminPanel({ adminKey, incident, onDone, onClose }: Props) {
           adminKey={adminKey}
           initialMessage={slackMessage}
           statusDot={slackDot}
-          onClose={() => { setShowSlackModal(false); onClose(); }}
+          onClose={() => { setShowSlackModal(false); saveIncident(); }}
         />
       )}
     </div>

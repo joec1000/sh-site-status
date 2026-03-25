@@ -67,7 +67,7 @@ export function SlackMessageModal({ adminKey, initialMessage, statusDot, onClose
               <button className="btn btn-primary" onClick={handleSend} disabled={sending || !message.trim()}>
                 {sending ? "Sending..." : "Send to Slack"}
               </button>
-              <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+              <button className="btn btn-secondary" onClick={onClose}>Skip</button>
             </>
           )}
         </div>

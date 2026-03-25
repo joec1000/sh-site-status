@@ -178,7 +178,7 @@ body {
   justify-content: space-between;
   margin-bottom: 0.75rem;
   padding-bottom: 0.5rem;
-  border-bottom: 2px solid var(--sh-orange);
+  border-bottom: 2px solid var(--sh-blue-dark);
 }
 
 .component-section-header h2 {
@@ -367,7 +367,7 @@ body {
   letter-spacing: 0.03em;
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
-  border-bottom: 2px solid var(--sh-orange);
+  border-bottom: 2px solid var(--sh-blue-dark);
 }
 
 .resolved-section h2 {
